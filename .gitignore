@@ -1,10 +1,14 @@
+#Vagrant Files
+.vagrant
+
+
 # Local .terraform directories
 **/.terraform/*
 
 # .tfstate files
 *.tfstate
 *.tfstate.*
-
+.terraform.lock.hcl
 # Crash log files
 crash.log
 crash.*.log
@@ -32,3 +36,6 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+#Files rke2
+rke2
