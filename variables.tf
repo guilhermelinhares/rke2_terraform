@@ -59,6 +59,7 @@ variable "local_file_path" {
       "sha256sum-<arch>.txt",
       "install.sh"
   EOT
+  default = ""
 }
 variable "remote_file_path" {
   type        = string

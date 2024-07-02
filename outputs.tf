@@ -20,15 +20,3 @@
     }
 
 #endregion
-
-# region - Output Module Install
-
-    output "kubeconfig" {
-    value       = module.rke2_install.kubeconfig
-    description = <<-EOT
-        The contents of the kubeconfig file.
-    EOT
-    sensitive   = true
-    }
-
-#endregion
