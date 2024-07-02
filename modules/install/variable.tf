@@ -132,6 +132,10 @@ variable "all_hosts" {
   type = list
 }
 
+variable "node_workers" {
+  
+}
+
 # variable "control_plane_token" {
 #   type = map(object({
 #     origins = set(object({

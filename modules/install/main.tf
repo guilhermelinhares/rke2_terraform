@@ -31,6 +31,7 @@ resource "null_resource" "copy_to_remote" {
     ]
   }
 }
+
 resource "null_resource" "configure" {
   depends_on = [
     null_resource.copy_to_remote,
@@ -61,6 +62,7 @@ resource "null_resource" "configure" {
     ]
   }
 }
+
 # run the install script, which may upgrade rke2 if it is already installed
 resource "null_resource" "install_control_plane" {
   depends_on = [
@@ -125,6 +127,43 @@ resource "null_resource" "install_workers" {
     ]
   }
 }
+
+resource "null_resource" "tls_san_cp" { 
+  # Fix error tls: failed to verify certificate: x509: certificate is valid for 127.0.0.1, ::1, 10.0.2.15, 10.43.0.1, not 192.168.56.9
+  count = length(var.ssh_ip)
+  depends_on = [
+    null_resource.copy_to_remote,
+    null_resource.configure,
+    null_resource.install_control_plane,
+    null_resource.install_workers
+  ]
+  triggers = {
+    id = local.identifier,
+  }
+  connection {
+    type        = "ssh"
+    user        = var.ssh_user
+    script_path = "${var.remote_workspace}/tls_san_cp"
+    agent       = true
+    host        = var.ssh_ip[count.index]
+    private_key = file(var.ssh_key)
+  }
+  provisioner "remote-exec" {
+    inline = [<<-EOT
+      set -x
+      set -e
+      IP=`ip addr show |grep "inet " |grep -v 127.0.0. |grep -v 10.0. |head -1|cut -d" " -f6|cut -d/ -f1`
+      sudo cat >${var.remote_workspace}/config_server.yaml <<'NEW_FILE_CONFIG_CONTROL_PLANE'
+      tls-san:
+        - IP
+      NEW_FILE_CONFIG_CONTROL_PLANE
+      sudo sed -i -e "s/IP/$IP/g" ${var.remote_workspace}/config_server.yaml
+      sudo mv ${var.remote_workspace}/config_server.yaml /etc/rancher/rke2/config.yaml
+    EOT
+    ]
+  }  
+}
+
 # start or restart rke2 service
 resource "null_resource" "start_control_plane" {
   count = length(var.ssh_ip)
@@ -302,4 +341,20 @@ resource "null_resource" "start_workers" {
         EOT
         ]
     }
+}
+
+resource "null_resource" "label_workers" {
+  count = length(var.node_workers)
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command = <<-EOT
+        NODE=${var.node_workers[count.index]}
+        KUBECONFIG=${abspath(path.root)}/rke2/kubeconfig-${local.identifier}.yaml
+        chmod +x ${abspath(path.module)}/files/label_workers.sh
+        "${abspath(path.module)}/files/label_workers.sh" $NODE $KUBECONFIG
+    EOT
+  }  
+
+  depends_on = [ null_resource.start_workers ]
 }

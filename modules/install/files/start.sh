@@ -12,7 +12,7 @@ systemctl enable "${SERVICE_NAME}"
 systemctl start "${SERVICE_NAME}" &
 
 EXIT=0
-max_attempts=$((TIMEOUT * 60 / 10))
+max_attempts=$((TIMEOUT * 120 / 10))
 
 attempts=0
 interval=10

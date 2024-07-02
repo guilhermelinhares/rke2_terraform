@@ -37,4 +37,5 @@ module "rke2_install" {
   start_timeout       = var.start_timeout
   remote_file_path    = var.remote_file_path
   all_hosts           = local.all_hosts
+  node_workers        = local.node_workers
 }
